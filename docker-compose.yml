@@ -1,62 +1,46 @@
-version: '3.7'
-services:
-  db:
-    image: mysql:latest
-    environment:
-      MYSQL_ROOT_PASSWORD: mysql_password
-      MYSQL_DATABASE: vacation
-    ports:
-      - "3306:3306"
-    volumes:
-      - db-data:/var/lib/mysql
-    networks:
-      - app-network
+version: '3.8'
 
+services:
   frontend:
     build:
       context: ./frontend
       dockerfile: Dockerfile
     ports:
-      - "4000:4000"
-    volumes:
-      - ./frontend/src:/app/src
-      - ./frontend/public:/app/public
-    environment:
-      - VITE_BACKEND_HOST=backend
-    tty: true
+      - "3000:3000"
     depends_on:
       - backend
-    networks:
-      - app-network
+    environment:
+      - VITE_API_URL=http://backend:9000
 
   backend:
     build:
       context: ./backend
       dockerfile: Dockerfile
-    restart: unless-stopped
+    ports:
+      - "9000:9000"
     environment:
-      PORT: 9000
+      NODE_ENV: development
       MYSQLDB_USER: root
       MYSQLDB_ROOT_PASSWORD: mysql_password
       MYSQLDB_DATABASE: vacation
-      MYSQLDB_HOST: db
+      MYSQLDB_HOST: mysql
       MYSQLDB_LOCAL_PORT: 3306
       MYSQLDB_DOCKER_PORT: 3306
       JWT_ACCESS_SECRET: secret
       JWT_REFRESH_TOKEN: secret12
-    ports:
-      - "9000:9000"  # Updated to match the correct port
-    volumes:
-      - ./backend:/app
-      - /app/node_modules
     depends_on:
-      - db
-    networks:
-      - app-network
+      - mysql
 
-networks:
-  app-network:
-    driver: bridge
+  mysql:
+    image: mysql:8.0
+    ports:
+      - "3306:3306"
+    environment:
+      MYSQL_ROOT_PASSWORD: mysql_password
+      MYSQL_DATABASE: vacation
+    volumes:
+      - mysql-data:/var/lib/mysql
 
 volumes:
-  db-data:
+  mysql-data:
+
